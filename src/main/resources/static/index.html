@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking OOP Demo</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #475569;
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary-dark), #7c3aed);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        header svg { width: 36px; height: 36px; fill: white; }
+        header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+        header span { color: var(--primary-light); font-size: 0.85rem; margin-left: auto; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+        /* Toast */
+        #toast {
+            position: fixed; top: 1rem; right: 1rem; z-index: 1000;
+            padding: 0.75rem 1.25rem; border-radius: var(--radius);
+            font-size: 0.9rem; font-weight: 500;
+            transform: translateX(120%); transition: transform 0.3s ease;
+            max-width: 400px; word-break: break-word;
+        }
+        #toast.show { transform: translateX(0); }
+        #toast.success { background: var(--success); color: white; }
+        #toast.error { background: var(--danger); color: white; }
+
+        /* Tabs */
+        .tabs {
+            display: flex; gap: 0.25rem; margin-bottom: 1.5rem;
+            background: var(--bg-card); border-radius: var(--radius);
+            padding: 0.25rem; overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 0.65rem 1.25rem; border: none; background: transparent;
+            color: var(--text-muted); cursor: pointer; border-radius: 10px;
+            font-size: 0.9rem; font-weight: 500; white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--text); background: var(--bg-input); }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card); border-radius: var(--radius);
+            padding: 1.5rem; margin-bottom: 1rem;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: var(--border); }
+        .card h3 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--primary-light); }
+
+        /* Forms */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-group label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        input, select {
+            padding: 0.6rem 0.75rem; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--bg-input);
+            color: var(--text); font-size: 0.9rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+        select option { background: var(--bg-input); }
+
+        .btn {
+            padding: 0.6rem 1.5rem; border: none; border-radius: 8px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        .btn-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+
+        /* Account cards grid */
+        .accounts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+        .account-card {
+            background: var(--bg-card); border-radius: var(--radius);
+            padding: 1.25rem; border-left: 4px solid var(--primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .account-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .account-card.savings { border-left-color: var(--success); }
+        .account-card.current { border-left-color: var(--warning); }
+        .account-card.fixed-deposit { border-left-color: #8b5cf6; }
+        .account-card .acc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .account-card .acc-number { font-size: 0.8rem; color: var(--text-muted); font-family: monospace; }
+        .account-card .acc-type {
+            font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 20px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .acc-type.savings { background: rgba(16,185,129,0.15); color: var(--success); }
+        .acc-type.current { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .acc-type.fixed-deposit { background: rgba(139,92,246,0.15); color: #a78bfa; }
+        .account-card .acc-owner { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .account-card .acc-balance { font-size: 1.5rem; font-weight: 700; color: var(--success); }
+        .account-card .acc-interest { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .account-card .acc-actions { display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap; }
+
+        /* Transactions table */
+        .tx-table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+        .tx-table th {
+            text-align: left; padding: 0.6rem 0.75rem; font-size: 0.75rem;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tx-table td { padding: 0.6rem 0.75rem; font-size: 0.85rem; border-bottom: 1px solid rgba(71,85,105,0.3); }
+        .tx-type { padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .tx-type.DEPOSIT { background: rgba(16,185,129,0.15); color: var(--success); }
+        .tx-type.WITHDRAWAL { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .tx-type.TRANSFER { background: rgba(99,102,241,0.15); color: var(--primary-light); }
+
+        .empty-state {
+            text-align: center; padding: 3rem; color: var(--text-muted);
+        }
+        .empty-state svg { width: 48px; height: 48px; fill: var(--border); margin-bottom: 1rem; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            z-index: 100; align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg-card); border-radius: var(--radius);
+            padding: 1.5rem; width: 90%; max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal h3 { margin-bottom: 1rem; }
+        .modal .btn-row { justify-content: flex-end; }
+    </style>
+</head>
+<body>
+    <header>
+        <svg viewBox="0 0 24 24"><path d="M11.5 1L2 6v2h19V6l-9.5-5zM12 3.31L17.74 6H6.26L12 3.31zM2 20h19v2H2v-2zm2-2h2v-8H4v8zm4 0h2v-8H8v8zm3 0h2v-8h-2v8zm4 0h2v-8h-2v8zm3 0h2v-8h-2v8z"/></svg>
+        <h1>Banking OOP Demo</h1>
+        <span>Spring Boot 3.2 &middot; Java 17</span>
+    </header>
+
+    <div id="toast"></div>
+
+    <div class="container">
+        <div class="tabs" role="tablist">
+            <button class="tab-btn active" onclick="switchTab('accounts')" role="tab">Accounts</button>
+            <button class="tab-btn" onclick="switchTab('create')" role="tab">Create Account</button>
+            <button class="tab-btn" onclick="switchTab('operations')" role="tab">Operations</button>
+            <button class="tab-btn" onclick="switchTab('transfer')" role="tab">Transfer</button>
+            <button class="tab-btn" onclick="switchTab('transactions')" role="tab">Transactions</button>
+            <button class="tab-btn" onclick="switchTab('customer')" role="tab">Customer</button>
+            <button class="tab-btn" onclick="switchTab('concurrency')" role="tab" style="background:rgba(139,92,246,0.15);color:#a78bfa;">&#9881; Concurrency</button>
+        </div>
+
+        <!-- Accounts Tab -->
+        <div id="tab-accounts" class="tab-panel active">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <h3 style="margin:0;">All Accounts</h3>
+                    <button class="btn btn-primary btn-sm" onclick="loadAllAccounts()">&#8635; Refresh</button>
+                </div>
+                <div class="form-grid" style="margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label>Search by Owner Name</label>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input type="text" id="searchOwner" placeholder="e.g. Alice">
+                            <button class="btn btn-primary btn-sm" onclick="searchByOwner()">Search</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="accountsList" class="accounts-grid">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24"><path d="M11.5 1L2 6v2h19V6l-9.5-5zM12 3.31L17.74 6H6.26L12 3.31zM2 20h19v2H2v-2zm2-2h2v-8H4v8zm4 0h2v-8H8v8zm3 0h2v-8h-2v8zm4 0h2v-8h-2v8zm3 0h2v-8h-2v8z"/></svg>
+                        <p>No accounts yet. Create one to get started.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Account Tab -->
+        <div id="tab-create" class="tab-panel">
+            <div class="card">
+                <h3>Create New Account</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Account Type</label>
+                        <select id="createType" onchange="toggleCreateFields()">
+                            <option value="savings">Savings</option>
+                            <option value="current">Current</option>
+                            <option value="fixed-deposit">Fixed Deposit</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Owner Name</label>
+                        <input type="text" id="createOwner" placeholder="e.g. Alice">
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Balance</label>
+                        <input type="number" id="createBalance" placeholder="1000" step="0.01">
+                    </div>
+                </div>
+                <div id="savingsFields" class="form-grid" style="margin-top:0.75rem;">
+                    <div class="form-group">
+                        <label>Minimum Balance</label>
+                        <input type="number" id="createMinBalance" placeholder="100" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Interest Rate (e.g. 0.05)</label>
+                        <input type="number" id="createInterestRate" placeholder="0.05" step="0.001">
+                    </div>
+                </div>
+                <div id="currentFields" class="form-grid" style="margin-top:0.75rem;display:none;">
+                    <div class="form-group">
+                        <label>Overdraft Limit</label>
+                        <input type="number" id="createOverdraft" placeholder="500" step="0.01">
+                    </div>
+                </div>
+                <div id="fixedFields" class="form-grid" style="margin-top:0.75rem;display:none;">
+                    <div class="form-group">
+                        <label>Tenure (months)</label>
+                        <input type="number" id="createTenure" placeholder="12">
+                    </div>
+                    <div class="form-group">
+                        <label>Fixed Rate (e.g. 0.07)</label>
+                        <input type="number" id="createFixedRate" placeholder="0.07" step="0.001">
+                    </div>
+                    <div class="form-group">
+                        <label>Early Withdrawal Penalty</label>
+                        <input type="number" id="createPenalty" placeholder="0.10" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="createAccount()">Create Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operations Tab -->
+        <div id="tab-operations" class="tab-panel">
+            <div class="card">
+                <h3>Deposit</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" id="depositAccNum" placeholder="ACC1">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="depositAmount" placeholder="100" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-success" onclick="doDeposit()">Deposit</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Withdraw</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" id="withdrawAccNum" placeholder="ACC1">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="withdrawAmount" placeholder="50" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-danger" onclick="doWithdraw()">Withdraw</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transfer Tab -->
+        <div id="tab-transfer" class="tab-panel">
+            <div class="card">
+                <h3>Transfer Funds</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Source Account</label>
+                        <input type="text" id="transferSource" placeholder="ACC1">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Account</label>
+                        <input type="text" id="transferTarget" placeholder="ACC2">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="transferAmount" placeholder="100" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="doTransfer()">Transfer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div id="tab-transactions" class="tab-panel">
+            <div class="card">
+                <h3>Transaction History</h3>
+                <div class="form-grid" style="margin-bottom:0.75rem;">
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input type="text" id="txAccNum" placeholder="ACC1">
+                            <button class="btn btn-primary btn-sm" onclick="loadTransactions()">Load</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="txList">
+                    <div class="empty-state"><p>Enter an account number to view transactions.</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Tab -->
+        <div id="tab-customer" class="tab-panel">
+            <div class="card">
+                <h3>Customer Lookup</h3>
+                <div class="form-grid" style="margin-bottom:0.75rem;">
+                    <div class="form-group">
+                        <label>Customer Name</label>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input type="text" id="custName" placeholder="Alice">
+                            <button class="btn btn-primary btn-sm" onclick="loadCustomerAccounts()">Search</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteCustomer()">Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="custAccounts" class="accounts-grid">
+                    <div class="empty-state"><p>Search for a customer to see their accounts.</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Concurrency Tab -->
+        <div id="tab-concurrency" class="tab-panel">
+            <!-- Result display area -->
+            <div class="card" id="concResultCard" style="display:none;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+                    <h3 id="concResultTitle" style="margin:0;">Result</h3>
+                    <button class="btn btn-sm" style="background:var(--border);color:var(--text);" onclick="document.getElementById('concResultCard').style.display='none'">Close</button>
+                </div>
+                <pre id="concResult" style="background:var(--bg);padding:1rem;border-radius:8px;overflow-x:auto;font-size:0.8rem;max-height:400px;overflow-y:auto;color:var(--primary-light);"></pre>
+            </div>
+
+            <!-- Beginner: Basic Threads -->
+            <div class="card">
+                <h3 style="color:#10b981;">Beginner: Basic Threads (Runnable, Thread lifecycle)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Creates a separate thread per deposit using BankingThreadFactory. Response shows thread name, ID, and state.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Account Numbers (comma-separated)</label>
+                        <input type="text" id="ccBatchDepositAccs" placeholder="ACC1,ACC2,ACC3">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount per deposit</label>
+                        <input type="number" id="ccBatchDepositAmt" value="100" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-success btn-sm" onclick="ccBatchDeposit()">Run Batch Deposit</button>
+                </div>
+            </div>
+
+            <!-- Beginner: Synchronized + Lock Ordering -->
+            <div class="card">
+                <h3 style="color:#10b981;">Beginner: Synchronized + Lock Ordering (Deadlock Prevention)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Runs concurrent transfers with synchronized blocks. Locks acquired in lexicographic order to prevent deadlocks.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Source Account</label>
+                        <input type="text" id="ccConcSrc" placeholder="ACC1">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Account</label>
+                        <input type="text" id="ccConcTgt" placeholder="ACC2">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="ccConcAmt" value="50" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary btn-sm" onclick="ccConcurrentTransfers()">Run Concurrent Transfers</button>
+                </div>
+            </div>
+
+            <!-- Intermediate: Thread Pool + CountDownLatch -->
+            <div class="card">
+                <h3 style="color:#f59e0b;">Intermediate: Thread Pool + CountDownLatch (Batch Interest)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Uses ExecutorService fixed thread pool with CountDownLatch to calculate interest for all accounts in parallel.</p>
+                <div class="btn-row">
+                    <button class="btn btn-primary btn-sm" onclick="ccBatchInterest()">Calculate Batch Interest</button>
+                </div>
+            </div>
+
+            <!-- Intermediate: CompletableFuture -->
+            <div class="card">
+                <h3 style="color:#f59e0b;">Intermediate: CompletableFuture (Async Transfer)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Chains async stages: validate → execute → log → result using thenApply/thenCompose. Failures handled with exceptionally().</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Source Account</label>
+                        <input type="text" id="ccAsyncSrc" placeholder="ACC1">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Account</label>
+                        <input type="text" id="ccAsyncTgt" placeholder="ACC2">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="ccAsyncAmt" value="75" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary btn-sm" onclick="ccAsyncTransfer()">Run Async Transfer</button>
+                </div>
+            </div>
+
+            <!-- Intermediate: CyclicBarrier -->
+            <div class="card">
+                <h3 style="color:#f59e0b;">Intermediate: CyclicBarrier (Coordinated Settlement)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">All transfer threads wait at a barrier before executing simultaneously, simulating a coordinated settlement.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Source → Target, Amount (one per line)</label>
+                        <textarea id="ccBarrierTransfers" rows="3" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.85rem;width:100%;" placeholder="ACC1,ACC2,50&#10;ACC2,ACC3,30"></textarea>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary btn-sm" onclick="ccBatchTransfer()">Run Barrier Transfer</button>
+                </div>
+            </div>
+
+            <!-- Intermediate: BlockingQueue Producer-Consumer -->
+            <div class="card">
+                <h3 style="color:#f59e0b;">Intermediate: BlockingQueue (Producer-Consumer)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Enqueues a transaction to a bounded LinkedBlockingQueue. A background consumer thread processes it asynchronously.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="ccQueueType">
+                            <option value="DEPOSIT">DEPOSIT</option>
+                            <option value="WITHDRAWAL">WITHDRAWAL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" id="ccQueueAcc" placeholder="ACC1">
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="ccQueueAmt" value="200" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary btn-sm" onclick="ccQueueSubmit()">Enqueue Transaction</button>
+                </div>
+            </div>
+
+            <!-- Intermediate: Semaphore -->
+            <div class="card">
+                <h3 style="color:#f59e0b;">Intermediate: Semaphore (Rate Limiter)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Checks available permits in the Semaphore-based rate limiter that caps concurrent operations.</p>
+                <div class="btn-row">
+                    <button class="btn btn-primary btn-sm" onclick="ccRateLimiterStatus()">Check Rate Limiter</button>
+                </div>
+            </div>
+
+            <!-- Advanced: Fork/Join -->
+            <div class="card">
+                <h3 style="color:#ef4444;">Advanced: Fork/Join (Fraud Detection)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Uses ForkJoinPool with RecursiveTask to scan transactions in parallel. Flags amounts exceeding the threshold.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Threshold Amount</label>
+                        <input type="number" id="ccFraudThreshold" value="500" step="0.01">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-danger btn-sm" onclick="ccFraudScan()">Run Fraud Scan</button>
+                </div>
+            </div>
+
+            <!-- Advanced: StampedLock -->
+            <div class="card">
+                <h3 style="color:#ef4444;">Advanced: StampedLock (Optimistic Read)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Reads balance using optimistic read (no lock). Falls back to pessimistic read lock if a concurrent write invalidates the stamp.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" id="ccStampedAcc" placeholder="ACC1">
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary btn-sm" onclick="ccStampedBalance()">Optimistic Read</button>
+                </div>
+            </div>
+
+            <!-- Advanced: Phaser -->
+            <div class="card">
+                <h3 style="color:#ef4444;">Advanced: Phaser (Multi-Phase Audit)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Three-phase audit: (1) collect snapshots, (2) validate balances, (3) generate report. Workers register/deregister dynamically.</p>
+                <div class="btn-row">
+                    <button class="btn btn-danger btn-sm" onclick="ccAudit()">Run Audit</button>
+                </div>
+            </div>
+
+            <!-- Advanced: Virtual Threads -->
+            <div class="card">
+                <h3 style="color:#ef4444;">Advanced: Virtual Threads (Project Loom)</h3>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Attempts virtual threads via reflection (Java 21+), falls back to platform threads on Java 17. One thread per transfer.</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Transfers (source,target,amount per line)</label>
+                        <textarea id="ccVirtualTransfers" rows="3" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.85rem;width:100%;" placeholder="ACC1,ACC2,25&#10;ACC2,ACC3,15"></textarea>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-danger btn-sm" onclick="ccVirtualTransfer()">Run Virtual Transfer</button>
+                </div>
+            </div>
+
+            <!-- Monitoring -->
+            <div class="card">
+                <h3 style="color:#8b5cf6;">Monitoring &amp; Diagnostics</h3>
+                <div class="btn-row">
+                    <button class="btn btn-sm" style="background:rgba(139,92,246,0.2);color:#a78bfa;" onclick="ccDeadlockStatus()">Deadlock Status</button>
+                    <button class="btn btn-sm" style="background:rgba(139,92,246,0.2);color:#a78bfa;" onclick="ccSingletons()">Singletons</button>
+                    <button class="btn btn-sm" style="background:rgba(139,92,246,0.2);color:#a78bfa;" onclick="ccThreadInfo()">Thread Info</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Amount Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3 id="modalTitle">Action</h3>
+            <div class="form-group" style="margin-bottom:1rem;">
+                <label>Amount</label>
+                <input type="number" id="modalAmount" placeholder="100" step="0.01">
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-sm" style="background:var(--border);color:var(--text);" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary btn-sm" id="modalConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+    const API = '/api';
+    let allAccounts = [];
+
+    // Toast notifications
+    function toast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = type + ' show';
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // Tab switching
+    function switchTab(name) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    // Toggle create form fields based on account type
+    function toggleCreateFields() {
+        const type = document.getElementById('createType').value;
+        document.getElementById('savingsFields').style.display = type === 'savings' ? 'grid' : 'none';
+        document.getElementById('currentFields').style.display = type === 'current' ? 'grid' : 'none';
+        document.getElementById('fixedFields').style.display = type === 'fixed-deposit' ? 'grid' : 'none';
+    }
+
+    // API helper
+    async function api(url, options = {}) {
+        try {
+            const res = await fetch(API + url, {
+                headers: { 'Content-Type': 'application/json' },
+                ...options
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || data.error || 'Request failed');
+            return data;
+        } catch (e) {
+            toast(e.message, 'error');
+            throw e;
+        }
+    }
+
+    // Create account
+    async function createAccount() {
+        const type = document.getElementById('createType').value;
+        const body = {
+            type,
+            ownerName: document.getElementById('createOwner').value,
+            initialBalance: parseFloat(document.getElementById('createBalance').value)
+        };
+        if (type === 'savings') {
+            body.minimumBalance = parseFloat(document.getElementById('createMinBalance').value);
+            body.interestRate = parseFloat(document.getElementById('createInterestRate').value);
+        } else if (type === 'current') {
+            body.overdraftLimit = parseFloat(document.getElementById('createOverdraft').value);
+        } else {
+            body.tenureMonths = parseInt(document.getElementById('createTenure').value);
+            body.fixedRate = parseFloat(document.getElementById('createFixedRate').value);
+            body.earlyWithdrawalPenalty = parseFloat(document.getElementById('createPenalty').value);
+        }
+        const data = await api('/accounts', { method: 'POST', body: JSON.stringify(body) });
+        toast(`Account ${data.accountNumber} created successfully!`);
+        loadAllAccounts();
+    }
+
+    // Deposit
+    async function doDeposit() {
+        const accNum = document.getElementById('depositAccNum').value;
+        const amount = parseFloat(document.getElementById('depositAmount').value);
+        const data = await api(`/accounts/${accNum}/deposit`, {
+            method: 'POST', body: JSON.stringify({ amount })
+        });
+        toast(`Deposited $${amount.toFixed(2)} — New balance: $${data.balance.toFixed(2)}`);
+        loadAllAccounts();
+    }
+
+    // Withdraw
+    async function doWithdraw() {
+        const accNum = document.getElementById('withdrawAccNum').value;
+        const amount = parseFloat(document.getElementById('withdrawAmount').value);
+        const data = await api(`/accounts/${accNum}/withdraw`, {
+            method: 'POST', body: JSON.stringify({ amount })
+        });
+        toast(`Withdrew $${amount.toFixed(2)} — New balance: $${data.balance.toFixed(2)}`);
+        loadAllAccounts();
+    }
+
+    // Transfer
+    async function doTransfer() {
+        const body = {
+            sourceAccountNumber: document.getElementById('transferSource').value,
+            targetAccountNumber: document.getElementById('transferTarget').value,
+            amount: parseFloat(document.getElementById('transferAmount').value)
+        };
+        await api('/transfers', { method: 'POST', body: JSON.stringify(body) });
+        toast(`Transferred $${body.amount.toFixed(2)} from ${body.sourceAccountNumber} to ${body.targetAccountNumber}`);
+        loadAllAccounts();
+    }
+
+    // Quick actions from account cards
+    function openModal(title, accNum, action) {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalAmount').value = '';
+        document.getElementById('modalOverlay').classList.add('show');
+        document.getElementById('modalConfirm').onclick = async () => {
+            const amount = parseFloat(document.getElementById('modalAmount').value);
+            if (action === 'deposit') {
+                await api(`/accounts/${accNum}/deposit`, {
+                    method: 'POST', body: JSON.stringify({ amount })
+                });
+                toast(`Deposited $${amount.toFixed(2)} to ${accNum}`);
+            } else {
+                await api(`/accounts/${accNum}/withdraw`, {
+                    method: 'POST', body: JSON.stringify({ amount })
+                });
+                toast(`Withdrew $${amount.toFixed(2)} from ${accNum}`);
+            }
+            closeModal();
+            loadAllAccounts();
+        };
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('show');
+    }
+
+    function viewTransactions(accNum) {
+        document.getElementById('txAccNum').value = accNum;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn')[4].classList.add('active');
+        document.getElementById('tab-transactions').classList.add('active');
+        loadTransactions();
+    }
+
+    // Render account card
+    function renderAccountCard(acc) {
+        const typeClass = acc.type || 'savings';
+        return `
+            <div class="account-card ${typeClass}">
+                <div class="acc-header">
+                    <span class="acc-number">${acc.accountNumber}</span>
+                    <span class="acc-type ${typeClass}">${acc.type}</span>
+                </div>
+                <div class="acc-owner">${acc.ownerName}</div>
+                <div class="acc-balance">$${acc.balance.toFixed(2)}</div>
+                <div class="acc-interest">Interest: $${acc.interest.toFixed(2)}</div>
+                <div class="acc-actions">
+                    <button class="btn btn-success btn-sm" onclick="openModal('Deposit to ${acc.accountNumber}','${acc.accountNumber}','deposit')">Deposit</button>
+                    <button class="btn btn-danger btn-sm" onclick="openModal('Withdraw from ${acc.accountNumber}','${acc.accountNumber}','withdraw')">Withdraw</button>
+                    <button class="btn btn-sm" style="background:var(--border);color:var(--text);" onclick="viewTransactions('${acc.accountNumber}')">History</button>
+                </div>
+            </div>`;
+    }
+
+    // Load all accounts (search by owner since there's no "list all" endpoint)
+    // We'll track accounts client-side from creation
+    async function loadAllAccounts() {
+        // The API doesn't have a "list all" endpoint, so we use tracked owner names
+        const owners = [...new Set(allAccounts.map(a => a.ownerName))];
+        if (owners.length === 0) {
+            document.getElementById('accountsList').innerHTML =
+                '<div class="empty-state"><p>No accounts yet. Create one to get started.</p></div>';
+            return;
+        }
+        let accounts = [];
+        for (const owner of owners) {
+            try {
+                const ownerAccounts = await fetch(API + `/customers/${encodeURIComponent(owner)}/accounts`)
+                    .then(r => r.json());
+                accounts = accounts.concat(ownerAccounts);
+            } catch (e) { /* owner may have been deleted */ }
+        }
+        allAccounts = accounts;
+        if (accounts.length === 0) {
+            document.getElementById('accountsList').innerHTML =
+                '<div class="empty-state"><p>No accounts found.</p></div>';
+            return;
+        }
+        document.getElementById('accountsList').innerHTML = accounts.map(renderAccountCard).join('');
+    }
+
+    // Search by owner
+    async function searchByOwner() {
+        const name = document.getElementById('searchOwner').value.trim();
+        if (!name) return;
+        try {
+            const accounts = await api(`/customers/${encodeURIComponent(name)}/accounts`);
+            // Track these owners
+            accounts.forEach(a => {
+                if (!allAccounts.find(x => x.accountNumber === a.accountNumber)) {
+                    allAccounts.push(a);
+                }
+            });
+            if (accounts.length === 0) {
+                document.getElementById('accountsList').innerHTML =
+                    '<div class="empty-state"><p>No accounts found for this customer.</p></div>';
+                return;
+            }
+            document.getElementById('accountsList').innerHTML = accounts.map(renderAccountCard).join('');
+        } catch (e) { /* handled by api() */ }
+    }
+
+    // Load transactions
+    async function loadTransactions() {
+        const accNum = document.getElementById('txAccNum').value.trim();
+        if (!accNum) return;
+        try {
+            const txs = await api(`/accounts/${accNum}/transactions`);
+            if (txs.length === 0) {
+                document.getElementById('txList').innerHTML =
+                    '<div class="empty-state"><p>No transactions for this account.</p></div>';
+                return;
+            }
+            let html = `<table class="tx-table">
+                <thead><tr><th>Type</th><th>Amount</th><th>Time</th><th>Source</th><th>Target</th></tr></thead><tbody>`;
+            txs.forEach(tx => {
+                html += `<tr>
+                    <td><span class="tx-type ${tx.transactionType}">${tx.transactionType}</span></td>
+                    <td>$${tx.amount.toFixed(2)}</td>
+                    <td>${new Date(tx.timestamp).toLocaleString()}</td>
+                    <td style="font-family:monospace;font-size:0.8rem;">${tx.sourceAccountNumber || '—'}</td>
+                    <td style="font-family:monospace;font-size:0.8rem;">${tx.targetAccountNumber || '—'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('txList').innerHTML = html;
+        } catch (e) { /* handled by api() */ }
+    }
+
+    // Customer accounts
+    async function loadCustomerAccounts() {
+        const name = document.getElementById('custName').value.trim();
+        if (!name) return;
+        try {
+            const accounts = await api(`/customers/${encodeURIComponent(name)}/accounts`);
+            accounts.forEach(a => {
+                if (!allAccounts.find(x => x.accountNumber === a.accountNumber)) {
+                    allAccounts.push(a);
+                }
+            });
+            if (accounts.length === 0) {
+                document.getElementById('custAccounts').innerHTML =
+                    '<div class="empty-state"><p>No accounts found for this customer.</p></div>';
+                return;
+            }
+            document.getElementById('custAccounts').innerHTML = accounts.map(renderAccountCard).join('');
+        } catch (e) { /* handled by api() */ }
+    }
+
+    // Delete customer
+    async function deleteCustomer() {
+        const name = document.getElementById('custName').value.trim();
+        if (!name || !confirm(`Delete customer "${name}" and all their accounts?`)) return;
+        try {
+            const data = await api(`/customers/${encodeURIComponent(name)}`, { method: 'DELETE' });
+            toast(`Customer "${name}" deleted — ${data.accountsClosed} account(s) closed`);
+            allAccounts = allAccounts.filter(a => a.ownerName !== name);
+            document.getElementById('custAccounts').innerHTML =
+                '<div class="empty-state"><p>Customer deleted.</p></div>';
+            loadAllAccounts();
+        } catch (e) { /* handled by api() */ }
+    }
+
+    // Track created accounts for the "all accounts" view
+    const origCreateAccount = createAccount;
+    createAccount = async function() {
+        const type = document.getElementById('createType').value;
+        const body = {
+            type,
+            ownerName: document.getElementById('createOwner').value,
+            initialBalance: parseFloat(document.getElementById('createBalance').value)
+        };
+        if (type === 'savings') {
+            body.minimumBalance = parseFloat(document.getElementById('createMinBalance').value);
+            body.interestRate = parseFloat(document.getElementById('createInterestRate').value);
+        } else if (type === 'current') {
+            body.overdraftLimit = parseFloat(document.getElementById('createOverdraft').value);
+        } else {
+            body.tenureMonths = parseInt(document.getElementById('createTenure').value);
+            body.fixedRate = parseFloat(document.getElementById('createFixedRate').value);
+            body.earlyWithdrawalPenalty = parseFloat(document.getElementById('createPenalty').value);
+        }
+        const data = await api('/accounts', { method: 'POST', body: JSON.stringify(body) });
+        toast(`Account ${data.accountNumber} created!`);
+        // Track for refresh
+        allAccounts.push({ ...data, interest: 0 });
+        loadAllAccounts();
+    };
+
+    // Close modal on overlay click
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // ===== CONCURRENCY DEMO FUNCTIONS =====
+    const CAPI = '/api/concurrency';
+
+    function showConcResult(title, data) {
+        document.getElementById('concResultCard').style.display = 'block';
+        document.getElementById('concResultTitle').textContent = title;
+        document.getElementById('concResult').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('concResultCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function ccBatchDeposit() {
+        const accs = document.getElementById('ccBatchDepositAccs').value.split(',').map(s => s.trim()).filter(Boolean);
+        const amount = parseFloat(document.getElementById('ccBatchDepositAmt').value);
+        const data = await api('/concurrency/batch-deposit', {
+            method: 'POST', body: JSON.stringify({ accountNumbers: accs, amount })
+        });
+        toast(`Batch deposit complete: ${accs.length} accounts`);
+        showConcResult('Batch Deposit — Thread Details', data);
+    }
+
+    async function ccConcurrentTransfers() {
+        const src = document.getElementById('ccConcSrc').value;
+        const tgt = document.getElementById('ccConcTgt').value;
+        const amt = parseFloat(document.getElementById('ccConcAmt').value);
+        const data = await api('/concurrency/concurrent-transfers', {
+            method: 'POST', body: JSON.stringify({ transfers: [
+                { sourceAccount: src, targetAccount: tgt, amount: amt },
+                { sourceAccount: tgt, targetAccount: src, amount: amt / 2 }
+            ]})
+        });
+        toast('Concurrent transfers complete');
+        showConcResult('Concurrent Transfers — Lock Ordering', data);
+    }
+
+    async function ccBatchInterest() {
+        const data = await api('/concurrency/batch-interest', { method: 'POST', body: '{}' });
+        toast(`Total interest: ${data.totalInterest?.toFixed(2) || 0}`);
+        showConcResult('Batch Interest — Thread Pool + CountDownLatch', data);
+    }
+
+    async function ccAsyncTransfer() {
+        const data = await api('/concurrency/async-transfer', {
+            method: 'POST', body: JSON.stringify({
+                sourceAccount: document.getElementById('ccAsyncSrc').value,
+                targetAccount: document.getElementById('ccAsyncTgt').value,
+                amount: parseFloat(document.getElementById('ccAsyncAmt').value)
+            })
+        });
+        toast(data.success ? 'Async transfer succeeded' : 'Async transfer failed');
+        showConcResult('Async Transfer — CompletableFuture', data);
+    }
+
+    function parseTransferLines(text) {
+        return text.split('\n').map(line => {
+            const [src, tgt, amt] = line.split(',').map(s => s.trim());
+            return { sourceAccount: src, targetAccount: tgt, amount: parseFloat(amt) };
+        }).filter(t => t.sourceAccount && t.targetAccount && !isNaN(t.amount));
+    }
+
+    async function ccBatchTransfer() {
+        const transfers = parseTransferLines(document.getElementById('ccBarrierTransfers').value);
+        const data = await api('/concurrency/batch-transfer', {
+            method: 'POST', body: JSON.stringify({ transfers })
+        });
+        toast(`Barrier transfer: ${transfers.length} transfers in ${data.executionTimeMs}ms`);
+        showConcResult('Barrier Transfer — CyclicBarrier', data);
+    }
+
+    async function ccQueueSubmit() {
+        const data = await api('/concurrency/queue/submit', {
+            method: 'POST', body: JSON.stringify({
+                type: document.getElementById('ccQueueType').value,
+                accountNumber: document.getElementById('ccQueueAcc').value,
+                amount: parseFloat(document.getElementById('ccQueueAmt').value)
+            })
+        });
+        toast(`Queued! Queue size: ${data.queueSize}`);
+        showConcResult('Queue Submit — BlockingQueue Producer-Consumer', data);
+    }
+
+    async function ccRateLimiterStatus() {
+        const data = await api('/concurrency/rate-limiter/status');
+        showConcResult('Rate Limiter — Semaphore Status', data);
+    }
+
+    async function ccFraudScan() {
+        const data = await api('/concurrency/fraud-scan', {
+            method: 'POST', body: JSON.stringify({
+                thresholdAmount: parseFloat(document.getElementById('ccFraudThreshold').value)
+            })
+        });
+        toast(`Fraud scan: ${data.flaggedTransactions?.length || 0} flagged of ${data.totalScanned} scanned`);
+        showConcResult('Fraud Scan — Fork/Join RecursiveTask', data);
+    }
+
+    async function ccStampedBalance() {
+        const acc = document.getElementById('ccStampedAcc').value;
+        const data = await api(`/concurrency/stamped-balance/${acc}`);
+        showConcResult('Stamped Balance — StampedLock Optimistic Read', data);
+    }
+
+    async function ccAudit() {
+        const data = await api('/concurrency/audit', { method: 'POST' });
+        toast(`Audit complete: ${data.balancesValid ? 'all valid' : 'issues found'}`);
+        showConcResult('Audit — Phaser Multi-Phase', data);
+    }
+
+    async function ccVirtualTransfer() {
+        const transfers = parseTransferLines(document.getElementById('ccVirtualTransfers').value);
+        const data = await api('/concurrency/virtual-transfer', {
+            method: 'POST', body: JSON.stringify({ transfers })
+        });
+        toast(`Virtual transfer: ${data.successCount}/${data.transferCount} using ${data.threadType} threads`);
+        showConcResult('Virtual Transfer — Project Loom', data);
+    }
+
+    async function ccDeadlockStatus() {
+        const data = await api('/concurrency/deadlock/status');
+        showConcResult('Deadlock Detection — ThreadMXBean', data);
+    }
+
+    async function ccSingletons() {
+        const data = await api('/concurrency/singletons');
+        showConcResult('Thread-Safe Singletons — Identity Hash Codes', data);
+    }
+
+    async function ccThreadInfo() {
+        const data = await api('/concurrency/thread-info');
+        showConcResult('Active Banking Threads', data);
+    }
+</script>
